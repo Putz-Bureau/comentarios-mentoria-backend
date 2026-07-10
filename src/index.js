@@ -10,8 +10,8 @@ function corsHeaders(env, request) {
       : allowedList[0] || "*";
   return {
     "Access-Control-Allow-Origin": allowOrigin,
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-admin-token",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin"
   };
@@ -106,6 +106,22 @@ async function createComment(request, env, ctx) {
   return json(comment, 201, env, request);
 }
 
+function isAuthorized(request, env) {
+  const token = request.headers.get("x-admin-token");
+  return Boolean(env.ADMIN_TOKEN) && token === env.ADMIN_TOKEN;
+}
+
+async function deleteComment(request, env, id) {
+  if (!isAuthorized(request, env)) {
+    return json({ error: "não autorizado" }, 401, env, request);
+  }
+  if (!id) {
+    return json({ error: "id obrigatório" }, 400, env, request);
+  }
+  await env.DB.prepare("DELETE FROM comments WHERE id = ?").bind(id).run();
+  return json({ ok: true }, 200, env, request);
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -121,6 +137,11 @@ export default {
 
     if (url.pathname === "/api/comments" && request.method === "POST") {
       return createComment(request, env, ctx);
+    }
+
+    if (url.pathname.startsWith("/api/comments/") && request.method === "DELETE") {
+      const id = decodeURIComponent(url.pathname.replace("/api/comments/", ""));
+      return deleteComment(request, env, id);
     }
 
     return json({ error: "not found" }, 404, env, request);
