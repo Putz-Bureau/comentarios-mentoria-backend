@@ -68,6 +68,7 @@ async function createComment(request, env, ctx) {
     .run();
 
   if (env.N8N_WEBHOOK_URL) {
+    console.log("Chamando webhook n8n...");
     ctx.waitUntil(
       fetch(env.N8N_WEBHOOK_URL, {
         method: "POST",
@@ -79,8 +80,17 @@ async function createComment(request, env, ctx) {
           ts: comment.ts,
           dataHora: new Date(comment.ts).toISOString()
         })
-      }).catch(() => {})
+      })
+        .then(async (res) => {
+          const bodyText = await res.text();
+          console.log("Webhook n8n respondeu status", res.status, bodyText);
+        })
+        .catch((err) => {
+          console.error("Erro ao chamar webhook n8n:", err.message || String(err));
+        })
     );
+  } else {
+    console.log("N8N_WEBHOOK_URL nao configurado, pulando webhook.");
   }
 
   return json(comment, 201, env);
