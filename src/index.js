@@ -1,18 +1,28 @@
-function corsHeaders(env) {
+function corsHeaders(env, request) {
+  const allowedList = String(env.ALLOWED_ORIGIN || "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+  const requestOrigin = request ? request.headers.get("Origin") : null;
+  const allowOrigin =
+    requestOrigin && allowedList.includes(requestOrigin)
+      ? requestOrigin
+      : allowedList[0] || "*";
   return {
-    "Access-Control-Allow-Origin": env.ALLOWED_ORIGIN || "*",
+    "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Max-Age": "86400"
+    "Access-Control-Max-Age": "86400",
+    "Vary": "Origin"
   };
 }
 
-function json(data, status, env) {
+function json(data, status, env, request) {
   return new Response(JSON.stringify(data), {
     status: status || 200,
     headers: Object.assign(
       { "Content-Type": "application/json" },
-      corsHeaders(env)
+      corsHeaders(env, request)
     )
   });
 }
@@ -43,14 +53,14 @@ async function createComment(request, env, ctx) {
   try {
     body = await request.json();
   } catch (e) {
-    return json({ error: "JSON inválido" }, 400, env);
+    return json({ error: "JSON inválido" }, 400, env, request);
   }
 
   const name = sanitize(body.name, 40);
   const text = sanitize(body.text, 200);
 
   if (!name || !text) {
-    return json({ error: "name e text são obrigatórios" }, 400, env);
+    return json({ error: "name e text são obrigatórios" }, 400, env, request);
   }
 
   const comment = {
@@ -93,7 +103,7 @@ async function createComment(request, env, ctx) {
     console.log("N8N_WEBHOOK_URL nao configurado, pulando webhook.");
   }
 
-  return json(comment, 201, env);
+  return json(comment, 201, env, request);
 }
 
 export default {
@@ -101,18 +111,18 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders(env) });
+      return new Response(null, { headers: corsHeaders(env, request) });
     }
 
     if (url.pathname === "/api/comments" && request.method === "GET") {
       const list = await listComments(env);
-      return json(list, 200, env);
+      return json(list, 200, env, request);
     }
 
     if (url.pathname === "/api/comments" && request.method === "POST") {
       return createComment(request, env, ctx);
     }
 
-    return json({ error: "not found" }, 404, env);
+    return json({ error: "not found" }, 404, env, request);
   }
 };
