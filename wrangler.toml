@@ -5,10 +5,10 @@ compatibility_date = "2024-09-23"
 [[d1_databases]]
 binding = "DB"
 database_name = "anh-comments-db"
-database_id = "COLOQUE_AQUI_O_ID_DO_BANCO"
+database_id = "d594fce8-022b-4671-a3f3-194e0fa23c58"
 
 [vars]
-ALLOWED_ORIGIN = "https://SEU-DOMINIO-WORDPRESS.com.br"
+ALLOWED_ORIGIN = "https://www.putzmentoria.com.br"
 
 # N8N_WEBHOOK_URL é um segredo — não coloque aqui.
 # Defina com: wrangler secret put N8N_WEBHOOK_URL
