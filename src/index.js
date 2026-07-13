@@ -68,7 +68,7 @@ async function createComment(request, env, ctx) {
     return json({ error: "não autorizado" }, 401, env, request);
   }
 
-  const name = sanitize(body.name, 40) || (parentId ? "Equipe Putz Mentoria" : "");
+  const name = sanitize(body.name, 40) || (parentId ? "Concierge Ana Alcoforado" : "");
   const text = sanitize(body.text, 200);
 
   if (!name || !text) {
